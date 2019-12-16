@@ -57,6 +57,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	fmt.Println("Access to http://localhost:8080/ (quit: Ctrl-c)")
 	http.HandleFunc("/", Handler)
 	http.ListenAndServe(":8080", nil)
 }
