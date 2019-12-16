@@ -14,18 +14,30 @@ type Omikuji struct {
 	ExecuteAt time.Time `json:"execute_at"`
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+type Server struct {
+	GetTime func() time.Time
+}
+
+func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+	// get request date
+	var d time.Time
+	if s.GetTime == nil {
+		d = time.Now()
+	} else {
+		d = s.GetTime()
+	}
+	_, month, day := d.Date()
+
+	// get request parameter
 	p := r.FormValue("p")
 	if p == "" {
 		p = "matsuyoshi"
 	}
 
-	str := "大吉"
-	// 1/1 - 3 は常に大吉
-	// それ以外はランダム
-	d := time.Now()
-	_, month, day := d.Date()
+	// set result
+	var str string
 	if month == time.January && (day == 1 || day == 2 || day == 3) {
+		str = "大吉"
 	} else {
 		switch rand.Intn(6) {
 		case 0:
@@ -45,19 +57,21 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		ExecuteAt: d,
 	}
 
-	json, err := json.Marshal(o)
-	if err != nil {
-		fmt.Println(err)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(o); err != nil {
+		http.Error(w, "fail to encode result", http.StatusInternalServerError)
 		return
 	}
+}
 
-	w.Write(json)
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	fmt.Println("Open http://localhost:8080/")
 
-	fmt.Println("Access to http://localhost:8080/ (quit: Ctrl-c)")
-	http.HandleFunc("/", Handler)
-	http.ListenAndServe(":8080", nil)
+	s := Server{}
+	http.HandleFunc("/", s.handler)
+	fmt.Println(http.ListenAndServe(":8080", nil))
 }
