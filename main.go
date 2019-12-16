@@ -15,11 +15,10 @@ type Omikuji struct {
 }
 
 type Server struct {
-	GetTime func() time.Time
+	GetTime func() time.Time // for test
 }
 
 func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
-	// get request date
 	var d time.Time
 	if s.GetTime == nil {
 		d = time.Now()
